@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal</title>
+    <style>
+        /* 全局样式 */
+        :root {
+            --background-color: #F2F2F7;
+            --card-background: #FFFFFF;
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --accent-color: #FF9500;
+            --border-color: #E5E5EA;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --highlight-color: #007AFF;
+            --red-color: #FF3B30;
+            --green-color: #34C759;
+            --yellow-color: #FFCC00;
+            --purple-color: #AF52DE;
+            --gradient-start: #FF9500;
+            --gradient-middle: #FF2D55;
+            --gradient-end: #AF52DE;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* 状态栏样式 */
+        .status-bar {
+            background-color: var(--background-color);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .status-bar-time {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .status-bar-icons {
+            display: flex;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        /* 应用标题和搜索栏 */
+        .app-header {
+            padding: 20px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-title {
+            font-size: 34px;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--gradient-start), var(--gradient-middle), var(--gradient-end));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-icon, .menu-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--card-background);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .search-icon i, .menu-icon i {
+            font-size: 20px;
+            color: var(--text-primary);
+        }
+
+        /* 搜索框 */
+        .search-container {
+            padding: 0 16px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .search-container.active {
+            display: block;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: none;
+            background-color: var(--card-background);
+            font-size: 16px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 2px 12px rgba(0, 122, 255, 0.2);
+        }
+
+        /* 统计信息 */
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .stat-item:last-child {
+            border-right: none;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-value i {
+            margin-right: 8px;
+            color: var(--highlight-color);
+            font-size: 24px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* 月份标题 */
+        .month-header {
+            padding: 0 16px;
+            margin-bottom: 20px;
+        }
+
+        .month-title {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        /* Journal 条目容器 */
+        .journal-container {
+            padding: 0 16px 80px;
+        }
+
+        /* Journal 条目样式 - 贴纸效果 */
+        .journal-entry {
+            background-color: var(--card-background);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .journal-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .journal-bookmark {
+            color: var(--red-color);
+            cursor: pointer;
+        }
+
+        .journal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .journal-content {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* 贴纸底部虚化效果 */
+        .journal-entry::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8));
+            pointer-events: none;
+        }
+
+        /* 贴纸底部装饰 */
+        .journal-decoration {
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 30px;
+            opacity: 0.1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-size: 20px;
+            overflow: hidden;
+        }
+
+        /* 图片网格 */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .image-item {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .more-images {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* 浮动添加按钮 */
+        .add-button {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: white;
+            color: var(--highlight-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        /* 添加按钮周围的虚化效果 */
+          /* 添加按钮背后的矩形虚化区域删除了，不好用 */
+          
+ 
+       
+
+        /* 详细页面样式 */
+        .detail-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--background-color);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .detail-page.active {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .detail-header {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--card-background);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .detail-back {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--background-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .detail-action {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--background-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .detail-content {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .detail-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detail-title-container {
+            margin-bottom: 20px;
+        }
+
+        .detail-title {
+            font-size: 24px;
+            font-weight: 600;
+            padding: 8px 0;
+            border: none;
+            background: transparent;
+            width: 100%;
+            outline: none;
+        }
+
+        .detail-title:focus {
+            border-bottom: 2px solid var(--highlight-color);
+        }
+
+        .detail-body-container {
+            margin-bottom: 30px;
+        }
+
+        .detail-body {
+            font-size: 18px;
+            line-height: 1.6;
+            padding: 8px 0;
+            border: none;
+            background: transparent;
+            width: 100%;
+            min-height: 200px;
+            outline: none;
+            resize: none;
+        }
+
+        .detail-body:focus {
+            border-bottom: 2px solid var(--highlight-color);
+        }
+
+        /* 添加图片相关样式 */
+        .detail-image-container {
+            margin: 20px 0;
+        }
+
+        .detail-image-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .detail-image-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .detail-image-add {
+            padding: 6px 12px;
+            background-color: var(--highlight-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-image-preview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .detail-image-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .detail-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .detail-image-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #image-upload {
+            display: none;
+        }
+
+        .detail-footer {
+            padding: 16px;
+            display: flex;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--card-background);
+            position: sticky;
+            bottom: 0;
+        }
+
+        .save-button {
+            padding: 10px 20px;
+            background-color: var(--highlight-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .save-button:hover {
+            background-color: #0062cc;
+        }
+
+        /* 响应式设计 */
+        @media (min-width: 768px) {
+            .journal-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+
+            .journal-entry {
+                margin-bottom: 0;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .journal-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-title {
+                font-size: 28px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .month-title {
+                font-size: 24px;
+            }
+        }
+
+        /* 颜色变体 */
+        .journal-entry.color-yellow {
+            background-color: #FFF9E6;
+        }
+
+        .journal-entry.color-green {
+            background-color: #E6F9ED;
+        }
+
+        .journal-entry.color-blue {
+            background-color: #E6F0FF;
+        }
+
+        .journal-entry.color-purple {
+            background-color: #F2E6FF;
+        }
+
+        .journal-entry.color-pink {
+            background-color: #FFE6F0;
+        }
+
+        /* 菜单弹出层 */
+        .menu-popup {
+            position: fixed;
+            top: 70px;
+            right: 16px;
+            background-color: var(--card-background);
+            border-radius: 12px;
+            box-shadow: 0 4px 16px var(--shadow-color);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+        }
+
+        .menu-popup.active {
+            display: block;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .menu-item:hover {
+            background-color: var(--background-color);
+        }
+
+        .menu-item i {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .menu-item-text {
+            font-size: 16px;
+        }
+        
+        /* 右键菜单样式 */
+        .context-menu {
+            position: fixed;
+            background-color: var(--card-background);
+            border-radius: 12px;
+            box-shadow: 0 4px 16px var(--shadow-color);
+            z-index: 1000;
+            overflow: hidden;
+            display: none;
+            width: 150px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .context-menu-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .context-menu-item:hover {
+            background-color: var(--background-color);
+        }
+        
+        .context-menu-item i {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            z-index: 2000;
+            transition: bottom 0.3s ease-out;
+        }
+        
+        .notification.show {
+            bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 应用标题和搜索按钮 -->
+    <header class="app-header">
+        <h1 class="app-title">journal</h1>
+        <div class="header-controls">
+            <div class="search-icon" id="search-toggle">
+                <i>🔍</i>
+            </div>
+            <div class="menu-icon">
+                <i>⋯</i>
+            </div>
+        </div>
+    </header>
+
+    <!-- 搜索框 -->
+    <div class="search-container" id="search-container">
+        <input type="text" class="search-input" id="search-input" placeholder="搜索 Journal...">
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="stats-container" id="stats-container">
+        <div class="stat-item">
+            <div class="stat-value">
+                <i>📁</i>
+            </div>
+            <div class="stat-label">Entries This Year</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">
+                <i>💬</i> 
+            </div>
+            <div class="stat-label">Words Written</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">
+                <i>📅</i>
+            </div>
+            <div class="stat-label">Days Journaled</div>
+        </div>
+    </div>
+
+    <!-- 月份标题 -->
+    <div class="month-header">
+        <h2 class="month-title">December 2024</h2>
+    </div>
+
+    <!-- Journal 条目容器 -->
+    <div class="journal-container" id="journal-container">
+        <!-- Journal 条目 1 -->
+        <article class="journal-entry color-yellow">
+            <div class="journal-date">
+                <span>Thursday, Dec 19, 2024</span>
+                <span class="journal-bookmark">🔖</span>
+            </div>
+            <h3 class="journal-title">元认知</h3>
+            <div class="journal-content">
+                <p>学会暂停：情绪波动时，不急于行动，先深呼吸几次。</p>
+                <p>找回理性：写下当前的感受，并尝试用事实核对自己的想法是否准确。</p>
+                <p>分散注意力：通过运动、听音乐等方式调节心态，让情绪逐渐平复。</p>
+                <p>学习：阅读、请教、实践，获取多元化的知识。教员青年时期通读马列著作，就是为了建立更高层次的思维框架。</p>
+            </div>
+            <div class="journal-decoration">
+                ✨ 📝 💭 🧠 📚 ✨ 📝 💭 🧠 📚
+            </div>
+        </article>
+
+        <!-- Journal 条目 2 -->
+        <article class="journal-entry color-blue">
+            <div class="journal-date">
+                <span>Wednesday, Dec 18, 2024</span>
+                <span class="journal-bookmark">🔖</span>
+            </div>
+            <div class="image-grid">
+                <div class="image-item">
+                    <img src="https://picsum.photos/200/200?random=1" alt="Journal image">
+                </div>
+                <div class="image-item">
+                    <img src="https://picsum.photos/200/200?random=2" alt="Journal image">
+                </div>
+                <div class="image-item">
+                    <img src="https://picsum.photos/200/200?random=3" alt="Journal image">
+                </div>
+                <div class="image-item">
+                    <img src="https://picsum.photos/200/200?random=4" alt="Journal image">
+                </div>
+                <div class="image-item">
+                    <img src="https://picsum.photos/200/200?random=5" alt="Journal image">
+                </div>
+                <div class="image-item">
+                    <img src="https://picsum.photos/200/200?random=6" alt="Journal image">
+                    <div class="more-images">+3</div>
+                </div>
+            </div>
+            <div class="journal-content">
+                <p>遇见是因为有缘分还是离开是因为走散了</p>
+                <p>前世不欠</p>
+                <p>今生不见</p>
+                <p>今生相见，定有亏欠</p>
+                <p>缘起，我在人群中看见你</p>
+                <p>缘灭，我看见你在人群中</p>
+            </div>
+            <div class="journal-decoration">
+                🌟 📷 🎭 🌈 ✨ 🌟 📷 🎭 🌈 ✨
+            </div>
+        </article>
+
+        <!-- Journal 条目 3 -->
+        <article class="journal-entry color-green">
+            <div class="journal-date">
+                <span>Monday, Dec 16, 2024</span>
+                <span class="journal-bookmark">🔖</span>
+            </div>
+            <h3 class="journal-title">今日反思</h3>
+            <div class="journal-content">
+                <p>今天完成了项目的第一阶段，团队合作非常顺利。我发现当我主动承担责任并清晰地沟通期望时，整个过程会更加高效。</p>
+                <p>明天需要开始准备下一阶段的工作，重点是改进用户界面和优化性能。我计划早起一小时，这样可以在办公室安静的时候集中精力思考这些问题。</p>
+            </div>
+            <div class="journal-decoration">
+                🌱 💡 🔄 📊 ✅ 🌱 💡 🔄 📊 ✅
+            </div>
+        </article>
+
+        <!-- Journal 条目 4 -->
+        <article class="journal-entry color-purple">
+            <div class="journal-date">
+                <span>Sunday, Dec 15, 2024</span>
+                <span class="journal-bookmark">🔖</span>
+            </div>
+            <h3 class="journal-title">周末感想</h3>
+            <div class="journal-content">
+                <p>这个周末终于有时间去了那家期待已久的咖啡馆。环境比想象中还要好，角落的位置阳光正好，一杯拿铁配上一本好书，时光缓缓流淌。</p>
+                <p>偶然遇到了大学时的朋友，聊了很多近况。感慨时间过得真快，但很高兴看到大家都在各自的道路上努力前行。</p>
+                <p>明天开始新的一周，希望能保持这种平静的心态面对工作中的挑战。</p>
+            </div>
+            <div class="journal-decoration">
+                ☕ 📚 🌞 👫 🌈 ☕ 📚 🌞 👫 🌈
+            </div>
+        </article>
+
+        <!-- Journal 条目 5 -->
+        <article class="journal-entry color-pink">
+            <div class="journal-date">
+                <span>Friday, Dec 13, 2024</span>
+                <span class="journal-bookmark">🔖</span>
+            </div>
+            <h3 class="journal-title">灵感记录</h3>
+            <div class="journal-content">
+                <p>今天在通勤路上突然有了一个新项目的想法：一个能够帮助人们追踪日常习惯并提供可视化反馈的应用。</p>
+                <p>关键功能：</p>
+                <p>- 自定义习惯追踪</p>
+                <p>- 进度可视化</p>
+                <p>- 成就系统</p>
+                <p>- 社区支持</p>
+                <p>周末要画一些草图并做一些市场调研，看看这个想法是否可行。</p>
+            </div>
+            <div class="journal-decoration">
+                💡 🚀 📱 🎨 📊 💡 🚀 📱 🎨 📊
+            </div>
+        </article>
+    </div>
+
+    <!-- 浮动添加按钮 -->
+    <div class="add-button" id="add-button">+</div>
+
+    <!-- 菜单弹出层 -->
+    <div class="menu-popup" id="menu-popup">
+        <div class="menu-item" id="bookmark-all">
+            <i>🔖</i>
+            <span class="menu-item-text">收藏所有日记</span>
+        </div>
+        <div class="menu-item" id="bookmark-today">
+            <i>📌</i>
+            <span class="menu-item-text">收藏今日日记</span>
+        </div>
+        <div class="menu-item" id="export-journals">
+            <i>📤</i>
+            <span class="menu-item-text">导出日记</span>
+        </div>
+        <div class="menu-item" id="settings">
+            <i>⚙️</i>
+            <span class="menu-item-text">设置</span>
+        </div>
+    </div>
+
+    <!-- 详细页面 -->
+    <div class="detail-page" id="detail-page">
+        <div class="detail-header">
+            <div class="detail-back" id="detail-back">
+                <i>←</i>
+            </div>
+            <div class="detail-actions">
+                <div class="detail-action" id="detail-bookmark">
+                    <i>🔖</i>
+                </div>
+                <div class="detail-action" id="detail-delete">
+                    <i>🗑️</i>
+                </div>
+            </div>
+        </div>
+        <div class="detail-content">
+            <div class="detail-date">
+                <span id="detail-date-text">Thursday, Dec 19, 2024</span>
+            </div>
+            <div class="detail-title-container">
+                <input type="text" class="detail-title" id="detail-title" placeholder="标题">
+            </div>
+            <div class="detail-body-container">
+                <textarea class="detail-body" id="detail-body" placeholder="写下你的想法..."></textarea>
+            </div>
+            
+            <!-- 添加图片部分 -->
+            <div class="detail-image-container">
+                <div class="detail-image-header">
+                    <div class="detail-image-title">图片</div>
+                    <label for="image-upload" class="detail-image-add">
+                        <i>📷</i>
+                        <span>添加图片</span>
+                    </label>
+                    <input type="file" id="image-upload" accept="image/*" multiple>
+                </div>
+                <div class="detail-image-preview" id="detail-image-preview">
+                    <!-- 图片预览将在这里显示 -->
+                </div>
+            </div>
+        </div>
+        <div class="detail-footer">
+            <button class="save-button" id="save-button">保存</button>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 调试信息
+            console.log('DOM fully loaded');
+            
+            // 获取DOM元素并验证
+            const detailBackBtn = document.getElementById('detail-back');
+            console.log('Detail back button:', detailBackBtn);
+            
+            if (detailBackBtn) {
+                // 确保事件监听器被正确添加
+                detailBackBtn.addEventListener('click', function(e) {
+                    console.log('Back button clicked');
+                    e.stopPropagation(); // 阻止事件冒泡
+                    
+                    // 如果有未保存的更改，提示用户
+                    if (hasUnsavedChanges()) {
+                        if (confirm('有未保存的更改，确定要返回吗？')) {
+                            detailPage.classList.remove('active');
+                        }
+                    } else {
+                        detailPage.classList.remove('active');
+                    }
+                });
+                
+                // 添加鼠标悬停效果以提供视觉反馈
+                detailBackBtn.style.cursor = 'pointer';
+                detailBackBtn.addEventListener('mouseover', function() {
+                    this.style.backgroundColor = 'var(--border-color)';
+                });
+                detailBackBtn.addEventListener('mouseout', function() {
+                    this.style.backgroundColor = 'var(--background-color)';
+                });
+            } else {
+                console.error('Detail back button not found in the DOM');
+            }
+            
+            // 获取DOM元素
+            const searchToggle = document.getElementById('search-toggle');
+            const searchContainer = document.getElementById('search-container');
+            const searchInput = document.getElementById('search-input');
+            const journalContainer = document.getElementById('journal-container');
+            const statsContainer = document.getElementById('stats-container');
+            const addButton = document.getElementById('add-button');
+            const statusBarTime = document.querySelector('.status-bar-time');
+            const menuIcon = document.querySelector('.menu-icon');
+            const menuPopup = document.getElementById('menu-popup');
+            const bookmarkAll = document.getElementById('bookmark-all');
+            const bookmarkToday = document.getElementById('bookmark-today');
+            const exportJournals = document.getElementById('export-journals');
+            const settings = document.getElementById('settings');
+            
+            // 所有Journal条目
+            const journalEntries = document.querySelectorAll('.journal-entry');
+            const detailPage = document.getElementById('detail-page');
+            const detailDateText = document.getElementById('detail-date-text');
+            const detailTitle = document.getElementById('detail-title');
+            const detailBody = document.getElementById('detail-body');
+            const detailBookmark = document.getElementById('detail-bookmark');
+            const detailDelete = document.getElementById('detail-delete');
+            const saveButton = document.getElementById('save-button');
+            
+            // 当前选中的日记条目
+            let currentEntry = null;
+            
+            // 切换搜索框显示/隐藏
+            searchToggle.addEventListener('click', function() {
+                searchContainer.classList.toggle('active');
+                if (searchContainer.classList.contains('active')) {
+                    searchInput.focus();
+                } else {
+                    searchInput.value = '';
+                    // 重置搜索结果，显示所有条目
+                    journalEntries.forEach(entry => {
+                        entry.style.display = 'block';
+                    });
+                }
+            });
+            
+            // 菜单弹出层显示/隐藏
+            menuIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menuPopup.classList.toggle('active');
+            });
+            
+            // 点击页面其他地方关闭菜单
+            document.addEventListener('click', function(e) {
+                if (menuPopup.classList.contains('active') && !menuPopup.contains(e.target) && e.target !== menuIcon) {
+                    menuPopup.classList.remove('active');
+                }
+            });
+            
+            // 菜单项点击事件
+            bookmarkAll.addEventListener('click', function() {
+                // 收藏所有日记
+                journalEntries.forEach(entry => {
+                    const bookmark = entry.querySelector('.journal-bookmark');
+                    bookmark.textContent = '🔖';
+                });
+                alert('已收藏所有日记');
+                menuPopup.classList.remove('active');
+            });
+            
+            bookmarkToday.addEventListener('click', function() {
+                // 获取今天的日期
+                const today = new Date();
+                const todayStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+                
+                // 收藏今天的日记
+                let found = false;
+                journalEntries.forEach(entry => {
+                    const dateText = entry.querySelector('.journal-date span').textContent;
+                    if (dateText.includes(today.getDate())) {
+                        const bookmark = entry.querySelector('.journal-bookmark');
+                        bookmark.textContent = '🔖';
+                        found = true;
+                    }
+                });
+                
+                if (found) {
+                    alert('已收藏今日日记');
+                } else {
+                    alert('未找到今日日记');
+                }
+                menuPopup.classList.remove('active');
+            });
+            
+            exportJournals.addEventListener('click', function() {
+                alert('导出日记功能即将上线');
+                menuPopup.classList.remove('active');
+            });
+            
+            settings.addEventListener('click', function() {
+                alert('设置页面即将上线');
+                menuPopup.classList.remove('active');
+            });
+            
+            // 搜索功能
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                
+                if (searchTerm === '') {
+                    // 如果搜索框为空，显示所有条目
+                    journalEntries.forEach(entry => {
+                        entry.style.display = 'block';
+                    });
+                    return;
+                }
+                
+                // 遍历所有条目，根据搜索词过滤
+                journalEntries.forEach(entry => {
+                    const content = entry.textContent.toLowerCase();
+                    if (content.includes(searchTerm)) {
+                        entry.style.display = 'block';
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                });
+            });
+            
+            // 状态栏点击跳转
+            statsContainer.addEventListener('click', function() {
+                alert('跳转到统计详情页面');
+            });
+            
+            // 添加按钮点击事件
+            addButton.addEventListener('click', function() {
+                alert('打开新建Journal页面');
+                // 这里应该添加创建新日记的逻辑
+                // 创建完成后调用 calculateStats();
+            });
+            
+            // 添加新日记功能
+            addButton.addEventListener('click', function() {
+                // 清空详情页内容
+                detailDateText.textContent = getCurrentDateFormatted();
+                detailTitle.value = '';
+                detailBody.value = '';
+                detailBookmark.innerHTML = '<i>🔗</i>';
+                
+                // 重置当前条目引用
+                currentEntry = null;
+                
+                // 显示详情页
+                detailPage.classList.add('active');
+                
+                // 聚焦到标题输入框
+                setTimeout(() => {
+                    detailTitle.focus();
+                }, 300);
+            });
+            
+            // 获取当前日期的格式化字符串
+            function getCurrentDateFormatted() {
+                const now = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+                return now.toLocaleDateString('en-US', options);
+            }
+            
+            // 保存按钮点击事件 - 修改为支持新建和编辑
+            saveButton.addEventListener('click', function() {
+                const newTitle = detailTitle.value;
+                const newContent = detailBody.value;
+                
+                if (currentEntry) {
+                    // 编辑现有日记
+                    updateJournalEntry(currentEntry, newTitle, newContent);
+                } else {
+                    // 创建新日记
+                    const newEntry = createNewJournalEntry(newTitle, newContent);
+                    journalContainer.insertBefore(newEntry, journalContainer.firstChild);
+                }
+                
+                // 重新计算统计数据
+                calculateStats();
+                saveJournalEntries();
+                
+                alert('日记已保存');
+                detailPage.classList.remove('active');
+            });
+            
+            // 更新现有日记条目
+            function updateJournalEntry(entry, title, content) {
+                // 更新标题
+                let titleElement = entry.querySelector('.journal-title');
+                if (title) {
+                    if (!titleElement) {
+                        titleElement = document.createElement('h3');
+                        titleElement.className = 'journal-title';
+                        const dateElement = entry.querySelector('.journal-date');
+                        entry.insertBefore(titleElement, dateElement.nextSibling);
+                    }
+                    titleElement.textContent = title;
+                } else if (titleElement) {
+                    titleElement.remove();
+                }
+                
+                // 更新内容
+                const contentElement = entry.querySelector('.journal-content');
+                if (contentElement) {
+                    contentElement.innerHTML = '';
+                    const paragraphs = content.split('\n\n');
+                    paragraphs.forEach(paragraph => {
+                        if (paragraph.trim()) {
+                            const p = document.createElement('p');
+                            p.textContent = paragraph;
+                            contentElement.appendChild(p);
+                        }
+                    });
+                }
+            }
+            
+            // 创建新日记条目
+            function createNewJournalEntry(title, content, date = getCurrentDateFormatted(), colorClass = null) {
+                // 创建新的日记条目元素
+                const newEntry = document.createElement('article');
+                
+                // 随机选择一个颜色类
+                const colorClasses = ['color-yellow', 'color-blue', 'color-green', 'color-purple', 'color-pink'];
+                const randomColorClass = colorClass || colorClasses[Math.floor(Math.random() * colorClasses.length)];
+                newEntry.className = `journal-entry ${randomColorClass}`;
+                
+                // 创建日期部分
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'journal-date';
+                
+                const dateSpan = document.createElement('span');
+                dateSpan.textContent = date;
+                
+                const bookmarkSpan = document.createElement('span');
+                bookmarkSpan.className = 'journal-bookmark';
+                bookmarkSpan.textContent = '🔗';
+                
+                dateDiv.appendChild(dateSpan);
+                dateDiv.appendChild(bookmarkSpan);
+                newEntry.appendChild(dateDiv);
+                
+                // 如果有标题，添加标题
+                if (title) {
+                    const titleElement = document.createElement('h3');
+                    titleElement.className = 'journal-title';
+                    titleElement.textContent = title;
+                    newEntry.appendChild(titleElement);
+                }
+                
+                // 添加内容
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'journal-content';
+                
+                const paragraphs = content.split('\n\n');
+                paragraphs.forEach(paragraph => {
+                    if (paragraph.trim()) {
+                        const p = document.createElement('p');
+                        p.textContent = paragraph;
+                        contentDiv.appendChild(p);
+                    }
+                });
+                
+                newEntry.appendChild(contentDiv);
+                
+                // 添加装饰
+                const decorationDiv = document.createElement('div');
+                decorationDiv.className = 'journal-decoration';
+                
+                // 根据颜色类选择不同的装饰图案
+                let decorationPattern = '';
+                switch (randomColorClass) {
+                    case 'color-yellow':
+                        decorationPattern = '✨ 📝 💭 🧠 📚 ✨ 📝 💭 🧠 📚';
+                        break;
+                    case 'color-blue':
+                        decorationPattern = '🌟 📷 🎭 🌈 ✨ 🌟 📷 🎭 🌈 ✨';
+                        break;
+                    case 'color-green':
+                        decorationPattern = '🌱 💡 🔄 📊 ✅ 🌱 💡 🔄 📊 ✅';
+                        break;
+                    case 'color-purple':
+                        decorationPattern = '☕ 📚 🌞 👫 🌈 ☕ 📚 🌞 👫 🌈';
+                        break;
+                    case 'color-pink':
+                        decorationPattern = '💡 🚀 📱 🎨 📊 💡 🚀 📱 🎨 📊';
+                        break;
+                }
+                
+                decorationDiv.textContent = decorationPattern;
+                newEntry.appendChild(decorationDiv);
+                
+                // 将新条目添加到容器的开头
+                journalContainer.insertBefore(newEntry, journalContainer.firstChild);
+                
+                // 为新条目添加点击事件
+                addJournalEntryClickEvent(newEntry);
+                
+                // 为新条目的书签添加点击事件
+                addBookmarkClickEvent(newEntry.querySelector('.journal-bookmark'));
+                
+                // 为新条目添加右键菜单
+                addContextMenuToEntry(newEntry);
+                
+                // 返回新创建的条目
+                return newEntry;
+            }
+            
+            // 为日记条目添加点击事件的函数
+            function addJournalEntryClickEvent(entry) {
+                entry.addEventListener('click', function(e) {
+                    // 如果点击的是书签图标，不打开详情页
+                    if (e.target.classList.contains('journal-bookmark') || 
+                        e.target.closest('.journal-bookmark')) {
+                        return;
+                    }
+                    
+                    // 保存当前条目引用
+                    currentEntry = entry;
+                    
+                    // 获取日记内容
+                    const dateText = entry.querySelector('.journal-date span').textContent;
+                    const titleElement = entry.querySelector('.journal-title');
+                    const title = titleElement ? titleElement.textContent : '';
+                    
+                    // 获取内容文本
+                    const contentElement = entry.querySelector('.journal-content');
+                    let content = '';
+                    if (contentElement) {
+                        // 将HTML内容转换为纯文本，保留段落
+                        const paragraphs = contentElement.querySelectorAll('p');
+                        const contentArray = [];
+                        paragraphs.forEach(p => {
+                            contentArray.push(p.textContent);
+                        });
+                        content = contentArray.join('\n\n');
+                    }
+                    
+                    // 获取书签状态
+                    const bookmarkElement = entry.querySelector('.journal-bookmark');
+                    const isBookmarked = bookmarkElement.textContent === '🔖';
+                    
+                    // 更新详情页内容
+                    detailDateText.textContent = dateText;
+                    detailTitle.value = title;
+                    detailBody.value = content;
+                    detailBookmark.innerHTML = isBookmarked ? '<i>🔖</i>' : '<i>🔗</i>';
+                    
+                    // 显示详情页
+                    detailPage.classList.add('active');
+                    
+                    // 聚焦到标题输入框
+                    setTimeout(() => {
+                        detailTitle.focus();
+                    }, 300);
+                });
+            }
+            
+            // 为书签添加点击事件的函数
+            function addBookmarkClickEvent(bookmarkElement) {
+                bookmarkElement.addEventListener('click', function() {
+                    // 切换书签状态
+                    if (this.textContent === '🔖') {
+                        this.textContent = '🔗';
+                        alert('已取消收藏');
+                    } else {
+                        this.textContent = '🔖';
+                        alert('已添加到收藏夹');
+                    }
+                });
+            }
+            
+            // 为所有现有日记条目添加点击事件
+            journalEntries.forEach(entry => {
+                addJournalEntryClickEvent(entry);
+            });
+            
+            // 为所有现有书签添加点击事件
+            document.querySelectorAll('.journal-bookmark').forEach(bookmark => {
+                addBookmarkClickEvent(bookmark);
+            });
+            
+            // 更新状态栏时间
+            function updateStatusBarTime() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                statusBarTime.textContent = `${hours}:${minutes}`;
+            }
+            
+            // 初始化时间并每秒更新一次
+            updateStatusBarTime();
+            setInterval(updateStatusBarTime, 1000);
+            
+            // 统计数据
+            const stats = {
+                entriesThisYear: 0,
+                wordsWritten: 0,
+                daysJournaled: 0
+            };
+            
+            // 计算统计数据
+            function calculateStats() {
+                // 获取所有日记条目
+                const entries = document.querySelectorAll('.journal-entry');
+                
+                // 当前年份
+                const currentYear = new Date().getFullYear();
+                
+                // 统计数据
+                let entriesThisYear = 0;
+                let wordsWritten = 0;
+                let daysJournaled = new Set(); // 使用Set避免重复计算同一天
+                
+                // 遍历所有日记条目
+                entries.forEach(entry => {
+                    // 获取日期文本
+                    const dateText = entry.querySelector('.journal-date span').textContent;
+                    
+                    // 检查是否是今年的条目
+                    const entryYear = new Date(dateText).getFullYear();
+                    if (entryYear === currentYear) {
+                        entriesThisYear++;
+                    }
+                    
+                    // 将日期添加到已记录日期集合中
+                    const entryDate = new Date(dateText).toLocaleDateString();
+                    daysJournaled.add(entryDate);
+                    
+                    // 计算单词数
+                    const contentElement = entry.querySelector('.journal-content');
+                    if (contentElement) {
+                        const text = contentElement.textContent.trim();
+                        // 计算中文字符数和英文单词数
+                        const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+                        const englishWords = text.match(/[a-zA-Z]+/g) || [];
+                        
+                        // 中文字符和英文单词都计入总字数
+                        wordsWritten += chineseChars.length + englishWords.length;
+                    }
+                });
+                
+                // 更新DOM
+                document.querySelector('.stat-item:nth-child(1) .stat-value').innerHTML = `<i>📁</i>${entriesThisYear}`;
+                document.querySelector('.stat-item:nth-child(2) .stat-value').innerHTML = `<i>💬</i>${wordsWritten}`;
+                document.querySelector('.stat-item:nth-child(3) .stat-value').innerHTML = `<i>📅</i>${daysJournaled.size}`;
+            }
+            
+            // 初始化统计
+            calculateStats();
+
+            // 检查是否有未保存的更改
+            function hasUnsavedChanges() {
+                if (!currentEntry) {
+                    // 新建模式，检查是否有输入内容
+                    return detailTitle.value.trim() !== '' || detailBody.value.trim() !== '';
+                } else {
+                    // 编辑模式，检查是否与原内容不同
+                    const titleElement = currentEntry.querySelector('.journal-title');
+                    const originalTitle = titleElement ? titleElement.textContent : '';
+                    
+                    const contentElement = currentEntry.querySelector('.journal-content');
+                    let originalContent = '';
+                    if (contentElement) {
+                        const paragraphs = contentElement.querySelectorAll('p');
+                        const contentArray = [];
+                        paragraphs.forEach(p => {
+                            contentArray.push(p.textContent);
+                        });
+                        originalContent = contentArray.join('\n\n');
+                    }
+                    
+                    return detailTitle.value !== originalTitle || detailBody.value !== originalContent;
+                }
+            }
+            
+            // 添加键盘快捷键支持
+            document.addEventListener('keydown', function(e) {
+                // 如果详情页面处于活动状态
+                if (detailPage.classList.contains('active')) {
+                    // ESC 键返回
+                    if (e.key === 'Escape') {
+                        detailBack.click();
+                    }
+                    
+                    // Ctrl+S 或 Cmd+S 保存
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                        e.preventDefault(); // 阻止浏览器默认保存行为
+                        saveButton.click();
+                    }
+                }
+            });
+
+            // 删除按钮点击事件
+            detailDelete.addEventListener('click', function() {
+                if (confirm('确定要删除这篇日记吗？此操作不可撤销。')) {
+                    if (currentEntry) {
+                        // 添加淡出动画
+                        currentEntry.style.transition = 'opacity 0.3s ease-out';
+                        currentEntry.style.opacity = '0';
+                        
+                        // 等待动画完成后删除元素
+                        setTimeout(() => {
+                            currentEntry.remove();
+                            
+                            // 重新计算统计数据
+                            calculateStats();
+                            saveJournalEntries();
+                            
+                            // 关闭详情页
+                            detailPage.classList.remove('active');
+                            
+                            // 显示删除成功提示
+                            showNotification('日记已删除');
+                        }, 300);
+                    }
+                }
+            });
+
+            // 添加右键菜单功能
+            journalEntries.forEach(entry => {
+                entry.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    showContextMenu(e, entry);
+                });
+            });
+            
+            // 创建右键菜单
+            function createContextMenu() {
+                const menu = document.createElement('div');
+                menu.className = 'context-menu';
+                menu.id = 'context-menu';
+                menu.innerHTML = `
+                    <div class="context-menu-item" id="context-edit">
+                        <i>✏️</i>
+                        <span>编辑</span>
+                    </div>
+                    <div class="context-menu-item" id="context-bookmark">
+                        <i>🔖</i>
+                        <span>收藏</span>
+                    </div>
+                    <div class="context-menu-item" id="context-delete">
+                        <i>🗑️</i>
+                        <span>删除</span>
+                    </div>
+                `;
+                document.body.appendChild(menu);
+                return menu;
+            }
+            
+            // 显示右键菜单
+            function showContextMenu(e, entry) {
+                // 获取或创建右键菜单
+                let contextMenu = document.getElementById('context-menu');
+                if (!contextMenu) {
+                    contextMenu = createContextMenu();
+                    
+                    // 添加菜单项点击事件
+                    document.getElementById('context-edit').addEventListener('click', function() {
+                        const targetEntry = contextMenu.targetEntry;
+                        if (targetEntry) {
+                            // 模拟点击日记条目，打开编辑页面
+                            simulateEntryClick(targetEntry);
+                        }
+                        hideContextMenu();
+                    });
+                    
+                    document.getElementById('context-bookmark').addEventListener('click', function() {
+                        const targetEntry = contextMenu.targetEntry;
+                        if (targetEntry) {
+                            const bookmark = targetEntry.querySelector('.journal-bookmark');
+                            // 切换书签状态
+                            if (bookmark.textContent === '🔖') {
+                                bookmark.textContent = '🔗';
+                                showNotification('已取消收藏');
+                            } else {
+                                bookmark.textContent = '🔖';
+                                showNotification('已添加到收藏夹');
+                            }
+                        }
+                        hideContextMenu();
+                    });
+                    
+                    document.getElementById('context-delete').addEventListener('click', function() {
+                        const targetEntry = contextMenu.targetEntry;
+                        if (targetEntry && confirm('确定要删除这篇日记吗？此操作不可撤销。')) {
+                            // 添加淡出动画
+                            targetEntry.style.transition = 'opacity 0.3s ease-out';
+                            targetEntry.style.opacity = '0';
+                            
+                            // 等待动画完成后删除元素
+                            setTimeout(() => {
+                                targetEntry.remove();
+                                
+                                // 重新计算统计数据
+                                calculateStats();
+                                saveJournalEntries();
+                                
+                                // 显示删除成功提示
+                                showNotification('日记已删除');
+                            }, 300);
+                        }
+                        hideContextMenu();
+                    });
+                    
+                    // 点击其他地方关闭菜单
+                    document.addEventListener('click', function(e) {
+                        if (!contextMenu.contains(e.target)) {
+                            hideContextMenu();
+                        }
+                    });
+                }
+                
+                // 保存目标条目引用
+                contextMenu.targetEntry = entry;
+                
+                // 更新书签菜单项文本
+                const bookmarkItem = document.getElementById('context-bookmark');
+                const isBookmarked = entry.querySelector('.journal-bookmark').textContent === '🔖';
+                bookmarkItem.querySelector('span').textContent = isBookmarked ? '取消收藏' : '收藏';
+                bookmarkItem.querySelector('i').textContent = isBookmarked ? '🔗' : '🔖';
+                
+                // 设置菜单位置
+                const menuWidth = 150; // 估计的菜单宽度
+                const menuHeight = 120; // 估计的菜单高度
+                
+                // 计算位置，确保菜单不会超出视口
+                let x = e.clientX;
+                let y = e.clientY;
+                
+                if (x + menuWidth > window.innerWidth) {
+                    x = window.innerWidth - menuWidth;
+                }
+                
+                if (y + menuHeight > window.innerHeight) {
+                    y = window.innerHeight - menuHeight;
+                }
+                
+                contextMenu.style.left = x + 'px';
+                contextMenu.style.top = y + 'px';
+                contextMenu.style.display = 'block';
+            }
+            
+            // 隐藏右键菜单
+            function hideContextMenu() {
+                const contextMenu = document.getElementById('context-menu');
+                if (contextMenu) {
+                    contextMenu.style.display = 'none';
+                }
+            }
+            
+            // 模拟点击日记条目
+            function simulateEntryClick(entry) {
+                // 保存当前条目引用
+                currentEntry = entry;
+                
+                // 获取日记内容
+                const dateText = entry.querySelector('.journal-date span').textContent;
+                const titleElement = entry.querySelector('.journal-title');
+                const title = titleElement ? titleElement.textContent : '';
+                
+                // 获取内容文本
+                const contentElement = entry.querySelector('.journal-content');
+                let content = '';
+                if (contentElement) {
+                    // 将HTML内容转换为纯文本，保留段落
+                    const paragraphs = contentElement.querySelectorAll('p');
+                    const contentArray = [];
+                    paragraphs.forEach(p => {
+                        contentArray.push(p.textContent);
+                    });
+                    content = contentArray.join('\n\n');
+                }
+                
+                // 获取书签状态
+                const bookmarkElement = entry.querySelector('.journal-bookmark');
+                const isBookmarked = bookmarkElement.textContent === '🔖';
+                
+                // 更新详情页内容
+                detailDateText.textContent = dateText;
+                detailTitle.value = title;
+                detailBody.value = content;
+                detailBookmark.innerHTML = isBookmarked ? '<i>🔖</i>' : '<i>🔗</i>';
+                
+                // 显示详情页
+                detailPage.classList.add('active');
+                
+                // 聚焦到标题输入框
+                setTimeout(() => {
+                    detailTitle.focus();
+                }, 300);
+            }
+            
+            // 显示通知
+            function showNotification(message) {
+                // 检查是否已存在通知元素
+                let notification = document.getElementById('notification');
+                if (!notification) {
+                    notification = document.createElement('div');
+                    notification.id = 'notification';
+                    document.body.appendChild(notification);
+                }
+                
+                // 设置通知内容和样式
+                notification.textContent = message;
+                notification.className = 'notification';
+                
+                // 显示通知
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+                
+                // 3秒后隐藏通知
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // 为新创建的日记条目添加右键菜单
+            function addContextMenuToEntry(entry) {
+                entry.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    showContextMenu(e, entry);
+                });
+            }
+
+            // Load journal entries from local storage
+            loadJournalEntries();
+
+            // Save journal entries to local storage
+            function saveJournalEntries() {
+                const entries = [];
+                document.querySelectorAll('.journal-entry').forEach(entry => {
+                    const date = entry.querySelector('.journal-date span').textContent;
+                    const title = entry.querySelector('.journal-title') ? entry.querySelector('.journal-title').textContent : '';
+                    const content = Array.from(entry.querySelectorAll('.journal-content p')).map(p => p.textContent).join('\n\n');
+                    const colorClass = Array.from(entry.classList).find(cls => cls.startsWith('color-'));
+                    entries.push({ date, title, content, colorClass });
+                });
+                localStorage.setItem('journalEntries', JSON.stringify(entries));
+            }
+
+            // Load journal entries from local storage
+            function loadJournalEntries() {
+                const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
+                entries.forEach(entry => {
+                    const newEntry = createNewJournalEntry(entry.title, entry.content, entry.date, entry.colorClass);
+                    journalContainer.appendChild(newEntry);
+                });
+                calculateStats();
+            }
+
+            // Create new journal entry with optional date and color class
+            function createNewJournalEntry(title, content, date = getCurrentDateFormatted(), colorClass = null) {
+                const newEntry = document.createElement('article');
+                const colorClasses = ['color-yellow', 'color-blue', 'color-green', 'color-purple', 'color-pink'];
+                const randomColorClass = colorClass || colorClasses[Math.floor(Math.random() * colorClasses.length)];
+                newEntry.className = `journal-entry ${randomColorClass}`;
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'journal-date';
+                const dateSpan = document.createElement('span');
+                dateSpan.textContent = date;
+                const bookmarkSpan = document.createElement('span');
+                bookmarkSpan.className = 'journal-bookmark';
+                bookmarkSpan.textContent = '🔗';
+                dateDiv.appendChild(dateSpan);
+                dateDiv.appendChild(bookmarkSpan);
+                newEntry.appendChild(dateDiv);
+                if (title) {
+                    const titleElement = document.createElement('h3');
+                    titleElement.className = 'journal-title';
+                    titleElement.textContent = title;
+                    newEntry.appendChild(titleElement);
+                }
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'journal-content';
+                const paragraphs = content.split('\n\n');
+                paragraphs.forEach(paragraph => {
+                    if (paragraph.trim()) {
+                        const p = document.createElement('p');
+                        p.textContent = paragraph;
+                        contentDiv.appendChild(p);
+                    }
+                });
+                newEntry.appendChild(contentDiv);
+                const decorationDiv = document.createElement('div');
+                decorationDiv.className = 'journal-decoration';
+                let decorationPattern = '';
+                switch (randomColorClass) {
+                    case 'color-yellow':
+                        decorationPattern = '✨ 📝 💭 🧠 📚 ✨ 📝 💭 🧠 📚';
+                        break;
+                    case 'color-blue':
+                        decorationPattern = '🌟 📷 🎭 🌈 ✨ 🌟 📷 🎭 🌈 ✨';
+                        break;
+                    case 'color-green':
+                        decorationPattern = '🌱 💡 🔄 📊 ✅ 🌱 💡 🔄 📊 ✅';
+                        break;
+                    case 'color-purple':
+                        decorationPattern = '☕ 📚 🌞 👫 🌈 ☕ 📚 🌞 👫 🌈';
+                        break;
+                    case 'color-pink':
+                        decorationPattern = '💡 🚀 📱 🎨 📊 💡 🚀 📱 🎨 📊';
+                        break;
+                }
+                decorationDiv.textContent = decorationPattern;
+                newEntry.appendChild(decorationDiv);
+                addJournalEntryClickEvent(newEntry);
+                addBookmarkClickEvent(newEntry.querySelector('.journal-bookmark'));
+                addContextMenuToEntry(newEntry);
+                return newEntry;
+            }
+        });
+    </script>
+</body>
+</html>
